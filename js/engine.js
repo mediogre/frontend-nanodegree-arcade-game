@@ -94,7 +94,7 @@ var Engine = (function(global) {
         allEnemies.forEach(function(enemy) {
             enemy.update(dt);
         });
-        player.update();
+        player.update(dt);
     }
 
     /* This function initially draws the "game level", it will then call
@@ -160,7 +160,8 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
-        // noop
+      allEnemies = [new Enemy()];
+      player = new Player(100, 400);
     }
 
     /* Go ahead and load all of the images we know we're going to need to
@@ -177,7 +178,7 @@ var Engine = (function(global) {
     Resources.onReady(init);
 
     /* Assign the canvas' context object to the global variable (the window
-     * object when run in a browser) so that developer's can use it more easily
+     * object wen run in a browser) so that developer's can use it more easily
      * from within their app.js files.
      */
     global.ctx = ctx;
