@@ -57,7 +57,7 @@ var Engine = (function(global) {
          * function again as soon as the browser is able to draw another frame.
          */
         win.requestAnimationFrame(main);
-    };
+    }
 
     /* This function does some initial setup that should only occur once,
      * particularly setting the lastTime variable that is required for the
@@ -80,8 +80,15 @@ var Engine = (function(global) {
      */
     function update(dt) {
         updateEntities(dt);
-        // checkCollisions();
+      checkCollisions();
     }
+
+  function checkCollisions() {
+    player.hit = false;
+    for (var i = 0, l = allEnemies.length; i < l; i++) {
+      player.collideEnemy(allEnemies[i]);
+    }
+  }
 
     /* This is called by the update function  and loops through all of the
      * objects within your allEnemies array as defined in app.js and calls
@@ -185,4 +192,5 @@ var Engine = (function(global) {
      * from within their app.js files.
      */
     global.ctx = ctx;
+    global.canvas = canvas;
 })(this);

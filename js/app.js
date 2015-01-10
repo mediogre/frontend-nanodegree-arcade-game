@@ -11,6 +11,9 @@ var Enemy = function(x, y, filename) {
   
   this.w = this.sprite.width;
   this.h = this.sprite.height;
+
+  this.rect_bounds = {l: 0, t: 76, r: this.w, b: this.h - 26};
+  // {l: 0, t: 76, r: 101, b: 145}
 };
 
 // Update the enemy's position, required method for game
@@ -26,10 +29,59 @@ Enemy.prototype.update = function(dt) {
   }
 };
 
+Enemy.prototype.left_bound = function() {
+  return this.x + this.rect_bounds.l;
+};
+
+Enemy.prototype.right_bound = function() {
+  return this.x + this.rect_bounds.l;
+};
+
+Enemy.prototype.collideEnemy = function(enemy) {
+  var er = enemy.rect_bounds;
+  var pr = this.rect_bounds;
+
+  enemy.hit = false;
+
+  if (enemy.x + er.r < (this.x + pr.l)) {
+    // enemy is to the right
+    return;
+  }
+
+  if (enemy.y + er.b < this.y + pr.t) {
+    // enemy is upper
+    return;
+  }
+
+  if (this.x + pr.r < enemy.x + er.l) {
+    // player is to the right
+    // that is enemy is to the left?
+    return;
+  }
+
+  if (this.y + pr.b < enemy.y + er.t) {
+    // enemy is lower
+    return;
+  }
+
+  // it looks we are intersecting?
+  enemy.hit = true;
+  this.hit = true;
+};
+
 // Draw the enemy on the screen, required method for game
 Enemy.prototype.render = function() {
   ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
-  ctx.strokeRect(this.x, this.y, this.w, this.h);
+  if (this.hit) {
+    ctx.strokeStyle = "green";
+  } else {
+    ctx.strokeStyle = "black";
+  }
+
+  ctx.strokeRect(this.x + this.rect_bounds.l,
+                 this.y + this.rect_bounds.t,
+                 this.rect_bounds.r - this.rect_bounds.l,
+                 this.rect_bounds.b - this.rect_bounds.t);
 };
 
 // Now write your own player class
@@ -42,7 +94,11 @@ var Player = function (x, y) {
     left:  false,
     right: false,
     up:    false,
-    down:  false
+    down:  false,
+    w:     false,
+    a:     false,
+    s:     false,
+    d:     false
   };
 
   this.shrink = false;
@@ -51,14 +107,23 @@ var Player = function (x, y) {
 
   this.do_shrink = false;
 
-
-  this.screen_bounds = {x: 0, y: 0, w: 500,  h: 600};
+  this.screen_bounds = {x: 0, y: 0, w: canvas.width,  h: canvas.height};
+  this.rect_bounds = {l: 18, t: 64, r: this.w - 18, b: this.h - 31};
+//{l: 18, t: 64, r: 83, b: 140}
 };
 
 Player.prototype = Object.create(Enemy.prototype);
 Player.prototype.constructor = Player;
 
 Player.prototype.update = function(dt) {
+  if (this.moves.w) {
+    this.rect_bounds.t -= 1;
+  }
+
+  if (this.moves.s) {
+    this.rect_bounds.t += 1;
+  }
+
   if (this.moves.left) {
     this.x -= 10;
   }
@@ -138,7 +203,12 @@ document.addEventListener('keyup', function(e) {
     37: 'left',
     38: 'up',
     39: 'right',
-    40: 'down'
+    40: 'down',
+
+    87: 'w',
+    83: 's',
+    65: 'a',
+    68: 'd'
   };
 
   player.handleInput(allowedKeys[e.keyCode], false);
@@ -149,7 +219,12 @@ document.addEventListener('keydown', function(e) {
     37: 'left',
     38: 'up',
     39: 'right',
-    40: 'down'
+    40: 'down',
+
+    87: 'w',
+    83: 's',
+    65: 'a',
+    68: 'd'
   };
 
   player.handleInput(allowedKeys[e.keyCode], true);
