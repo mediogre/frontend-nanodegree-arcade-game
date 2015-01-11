@@ -13,19 +13,108 @@ var Enemy = function(x, y, filename) {
   this.h = this.sprite.height;
 
   this.rect_bounds = {l: 0, t: 76, r: this.w, b: this.h - 26};
+  this.screen_bounds = {x: 0, y: 0, w: canvas.width,  h: canvas.height};
   // {l: 0, t: 76, r: 101, b: 145}
 };
+
+// An enemy that re-enters the field from the other side
+var WrappingEnemy = function () {
+  Enemy.apply(this, arguments);
+};
+
+WrappingEnemy.prototype = Object.create(Enemy.prototype);
+WrappingEnemy.prototype.constructor = WrappingEnemy;
+
+// An enemy that bounces when hitting the edge of the field
+var BouncingEnemy = function () {
+  Enemy.apply(this, arguments);
+  this.going_right = true;
+};
+
+BouncingEnemy.prototype = Object.create(Enemy.prototype);
+BouncingEnemy.prototype.constructor = BouncingEnemy;
+
+// a Bouncing Enemy making sporadic decisions and changing directions
+var DrunkEnemy = function () {
+  BouncingEnemy.apply(this, arguments);
+};
+
+DrunkEnemy.prototype = Object.create(BouncingEnemy.prototype);
+DrunkEnemy.prototype.constructor = DrunkEnemy;
+
+var Player = function (x, y) {
+  Enemy.call(this, x, y, 'images/char-boy.png');
+
+  this.moves = {
+    left:  false,
+    right: false,
+    up:    false,
+    down:  false,
+    w:     false,
+    a:     false,
+    s:     false,
+    d:     false
+  };
+
+  this.shrink = false;
+  this.max_w  = this.w * 2;
+  this.min_w  = this.w / 2;
+
+  this.do_shrink = false;
+
+  this.rect_bounds = {l: 18, t: 64, r: this.w - 18, b: this.h - 31};
+//{l: 18, t: 64, r: 83, b: 140}
+};
+
+Player.prototype = Object.create(Enemy.prototype);
+Player.prototype.constructor = Player;
 
 // Update the enemy's position, required method for game
 // Parameter: dt, a time delta between ticks
 Enemy.prototype.update = function(dt) {
-  // You should multiply any movement by the dt parameter
-  // which will ensure the game runs at the same speed for
-  // all computers.
+};
 
+WrappingEnemy.prototype.update = function(dt) {
   this.x += 1;
   if (this.x > 500) {
     this.x = 0;
+  }
+};
+
+BouncingEnemy.prototype.update = function(dt) {
+  if (this.going_right) {
+    this.x += 1;
+    if (this.x + this.rect_bounds.l > this.screen_bounds.w) {
+      this.x = this.screen_bounds.w;
+      this.going_right = false;
+    }
+  } else {
+    this.x -= 1;
+    if (this.x + this.rect_bounds.r < 0) {
+      this.x = -this.rect_bounds.r;
+      this.going_right = true;
+    }
+  }
+};
+
+BouncingEnemy.prototype.render = function() {
+  if (!this.going_right) {
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(this.sprite, -this.x, this.y, -this.w, this.h);
+    if (this.hit) {
+      ctx.strokeStyle = "green";
+    } else {
+      ctx.strokeStyle = "black";
+    }
+
+    ctx.strokeRect(-1 * (this.x + this.rect_bounds.l),
+                   this.y + this.rect_bounds.t,
+                   -1 * (this.rect_bounds.r - this.rect_bounds.l),
+                   this.rect_bounds.b - this.rect_bounds.t);
+    ctx.restore();
+  } else {
+    Enemy.prototype.render.call(this);
   }
 };
 
@@ -87,33 +176,7 @@ Enemy.prototype.render = function() {
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
-var Player = function (x, y) {
-  Enemy.call(this, x, y, 'images/char-boy.png');
 
-  this.moves = {
-    left:  false,
-    right: false,
-    up:    false,
-    down:  false,
-    w:     false,
-    a:     false,
-    s:     false,
-    d:     false
-  };
-
-  this.shrink = false;
-  this.max_w  = this.w * 2;
-  this.min_w  = this.w / 2;
-
-  this.do_shrink = false;
-
-  this.screen_bounds = {x: 0, y: 0, w: canvas.width,  h: canvas.height};
-  this.rect_bounds = {l: 18, t: 64, r: this.w - 18, b: this.h - 31};
-//{l: 18, t: 64, r: 83, b: 140}
-};
-
-Player.prototype = Object.create(Enemy.prototype);
-Player.prototype.constructor = Player;
 
 Player.prototype.update = function(dt) {
   if (this.moves.w) {
@@ -169,20 +232,20 @@ Enemy.prototype.bottom = function() {
 };
 
 Player.prototype.force_screen_bounds = function() {
-  if (this.x < this.screen_bounds.x) {
-    this.x = this.screen_bounds.x;
+  if (this.x + this.rect_bounds.l < this.screen_bounds.x) {
+    this.x = this.screen_bounds.x - this.rect_bounds.l;
   }
 
-  if (this.right() > this.screen_bounds.w) {
-    this.x = this.screen_bounds.w - this.w;
+  if (this.x + this.rect_bounds.r > this.screen_bounds.w) {
+    this.x = this.screen_bounds.w - this.rect_bounds.r;
   }
 
-  if (this.y < this.screen_bounds.y) {
-    this.y = this.screen_bounds.y;
+  if (this.y + this.rect_bounds.t < this.screen_bounds.y) {
+    this.y = this.screen_bounds.y - this.rect_bounds.t;
   }
 
-  if (this.bottom() > this.screen_bounds.h) {
-    this.y = this.screen_bounds.h - this.h;
+  if (this.y + this.rect_bounds.b > this.screen_bounds.h) {
+    this.y = this.screen_bounds.h - this.rect_bounds.b;
   }
 };
 

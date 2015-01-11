@@ -169,8 +169,12 @@ var Engine = (function(global) {
      * handle game reset states - maybe a new game menu or a game over screen
      * those sorts of things. It's only called once by the init() method.
      */
+  function random_enemy() {
+    var enemy_types = [WrappingEnemy, BouncingEnemy, DrunkEnemy];
+    return enemy_types[Math.floor(Math.random() * enemy_types.length)];
+  }
     function reset() {
-      allEnemies = [new Enemy()];
+      allEnemies = [new (random_enemy())(10, 60), new (random_enemy())(200, 230), new (random_enemy())(300, 150)];
       player = new Player(100, 400);
     }
 
