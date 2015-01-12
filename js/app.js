@@ -17,6 +17,13 @@ var Enemy = function(x, y, filename) {
   // {l: 0, t: 76, r: 101, b: 145}
 };
 
+// a and b are rectangles (AABBs)
+// return true if they intersect each other
+// return false otherwise
+Enemy.rects_intersect = function(a, b) {
+  return !(a.right < b.left || b.right < a.left || a.bottom < b.top || b.bottom < a.top);
+};
+
 // An enemy that re-enters the field from the other side
 var WrappingEnemy = function () {
   Enemy.apply(this, arguments);
@@ -75,21 +82,47 @@ Enemy.prototype.update = function(dt) {
 };
 
 WrappingEnemy.prototype.update = function(dt) {
-  this.x += 1;
-  if (this.x > 500) {
+  this.x += Math.floor(200 * dt);
+  if (this.x > this.screen_bounds.w) {
     this.x = 0;
   }
 };
 
+WrappingEnemy.prototype.bounding_boxes = function() {
+  var boxes = Enemy.prototype.bounding_boxes.call(this);
+
+  var wrapped_part = (this.x + this.rect_bounds.r) - this.screen_bounds.w;
+  if (wrapped_part > 0) {
+    boxes.push({left: 0,
+                top: this.y + this.rect_bounds.t,
+                right: wrapped_part,
+                bottom: this.y + this.rect_bounds.b});
+  }
+  return boxes;
+};
+
+WrappingEnemy.prototype.render = function() {
+  var wrapped_part = (this.x + this.rect_bounds.r) - this.screen_bounds.w;
+  if (wrapped_part > 0) {
+    ctx.drawImage(this.sprite, 
+                  this.screen_bounds.w - this.x, 0, 
+                  wrapped_part, this.sprite.height,
+                  0, this.y,
+                  wrapped_part, this.sprite.height);
+  }
+  ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
+  this.debug_render();
+};
+
 BouncingEnemy.prototype.update = function(dt) {
   if (this.going_right) {
-    this.x += 1;
+    this.x += 10;
     if (this.x + this.rect_bounds.l > this.screen_bounds.w) {
       this.x = this.screen_bounds.w;
       this.going_right = false;
     }
   } else {
-    this.x -= 1;
+    this.x -= 10;
     if (this.x + this.rect_bounds.r < 0) {
       this.x = -this.rect_bounds.r;
       this.going_right = true;
@@ -102,17 +135,18 @@ BouncingEnemy.prototype.render = function() {
     ctx.save();
     ctx.scale(-1, 1);
     ctx.drawImage(this.sprite, -this.x, this.y, -this.w, this.h);
-    if (this.hit) {
+    if (this.isHit()) {
       ctx.strokeStyle = "green";
     } else {
       ctx.strokeStyle = "black";
     }
 
-    ctx.strokeRect(-1 * (this.x + this.rect_bounds.l),
-                   this.y + this.rect_bounds.t,
-                   -1 * (this.rect_bounds.r - this.rect_bounds.l),
-                   this.rect_bounds.b - this.rect_bounds.t);
+    // ctx.strokeRect(-1 * (this.x + this.rect_bounds.l),
+    //                this.y + this.rect_bounds.t,
+    //                -1 * (this.rect_bounds.r - this.rect_bounds.l),
+    //                this.rect_bounds.b - this.rect_bounds.t);
     ctx.restore();
+    this.debug_render();
   } else {
     Enemy.prototype.render.call(this);
   }
@@ -126,51 +160,60 @@ Enemy.prototype.right_bound = function() {
   return this.x + this.rect_bounds.l;
 };
 
-Enemy.prototype.collideEnemy = function(enemy) {
-  var er = enemy.rect_bounds;
-  var pr = this.rect_bounds;
-
-  enemy.hit = false;
-
-  if (enemy.x + er.r < (this.x + pr.l)) {
-    // enemy is to the right
-    return;
-  }
-
-  if (enemy.y + er.b < this.y + pr.t) {
-    // enemy is upper
-    return;
-  }
-
-  if (this.x + pr.r < enemy.x + er.l) {
-    // player is to the right
-    // that is enemy is to the left?
-    return;
-  }
-
-  if (this.y + pr.b < enemy.y + er.t) {
-    // enemy is lower
-    return;
-  }
-
-  // it looks we are intersecting?
-  enemy.hit = true;
-  this.hit = true;
+Enemy.prototype.unhit = function() {
+  this.hit_ = false;
 };
 
+Enemy.prototype.hit = function() {
+  this.hit_ = true;
+};
+
+Enemy.prototype.isHit = function() {
+  return this.hit_;
+};
+
+Enemy.prototype.collide = function(other) {
+  var other_rects = other.bounding_boxes();
+  var own_rects   = this.bounding_boxes();
+
+  for (var i = 0, l = own_rects.length; i < l; i++) {
+    for (var j = 0, ol = other_rects.length; j < ol; j++) {
+      if (Enemy.rects_intersect(own_rects[i], other_rects[j])) {
+        this.hit();
+        other.hit();
+        return;
+      }
+    }
+  }
+};
+
+Enemy.prototype.bounding_boxes = function() {
+  return [{left: this.x + this.rect_bounds.l,
+           top:  this.y + this.rect_bounds.t,
+           right: this.x + this.rect_bounds.r,
+           bottom: this.y + this.rect_bounds.b}];
+};
+
+Enemy.prototype.debug_render = function() {
+  if (this.isHit()) {
+    var prevStrokeStyle = ctx.strokeStyle;
+    ctx.strokeStyle = "red";
+
+    var boxes = this.bounding_boxes();
+    var i, l, box;
+    for (i = 0, l = boxes.length; i < l; i++) {
+      box = boxes[i];
+      ctx.strokeRect(box.left, box.top,
+                     box.right - box.left,
+                     box.bottom - box.top);
+    }
+    ctx.strokeStyle = prevStrokeStyle;
+  }
+};
 // Draw the enemy on the screen, required method for game
 Enemy.prototype.render = function() {
   ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
-  if (this.hit) {
-    ctx.strokeStyle = "green";
-  } else {
-    ctx.strokeStyle = "black";
-  }
-
-  ctx.strokeRect(this.x + this.rect_bounds.l,
-                 this.y + this.rect_bounds.t,
-                 this.rect_bounds.r - this.rect_bounds.l,
-                 this.rect_bounds.b - this.rect_bounds.t);
+  this.debug_render();
 };
 
 // Now write your own player class

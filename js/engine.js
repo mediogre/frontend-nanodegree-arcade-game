@@ -79,14 +79,15 @@ var Engine = (function(global) {
      * on the entities themselves within your app.js file).
      */
     function update(dt) {
-        updateEntities(dt);
+      updateEntities(dt);
       checkCollisions();
     }
 
   function checkCollisions() {
-    player.hit = false;
+    player.unhit();
     for (var i = 0, l = allEnemies.length; i < l; i++) {
-      player.collideEnemy(allEnemies[i]);
+      allEnemies[i].unhit();
+      player.collide(allEnemies[i]);
     }
   }
 
@@ -174,7 +175,7 @@ var Engine = (function(global) {
     return enemy_types[Math.floor(Math.random() * enemy_types.length)];
   }
     function reset() {
-      allEnemies = [new (random_enemy())(10, 60), new (random_enemy())(200, 230), new (random_enemy())(300, 150)];
+      allEnemies = [new (random_enemy())(10, 60), new (random_enemy())(200, 225), new (random_enemy())(300, 150)];
       player = new Player(100, 400);
     }
 
