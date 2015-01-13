@@ -1,4 +1,7 @@
-// Enemies our player must avoid
+/**
+ * Generic Enemy - can render itself, collide with the player
+ * @constructor
+ */
 var Enemy = function(x, y, filename) {
   // Variables applied to each of our instances go here,
   // we've provided one for you to get started
@@ -135,16 +138,6 @@ BouncingEnemy.prototype.render = function() {
     ctx.save();
     ctx.scale(-1, 1);
     ctx.drawImage(this.sprite, -this.x, this.y, -this.w, this.h);
-    if (this.isHit()) {
-      ctx.strokeStyle = "green";
-    } else {
-      ctx.strokeStyle = "black";
-    }
-
-    // ctx.strokeRect(-1 * (this.x + this.rect_bounds.l),
-    //                this.y + this.rect_bounds.t,
-    //                -1 * (this.rect_bounds.r - this.rect_bounds.l),
-    //                this.rect_bounds.b - this.rect_bounds.t);
     ctx.restore();
     this.debug_render();
   } else {
@@ -222,14 +215,6 @@ Enemy.prototype.render = function() {
 
 
 Player.prototype.update = function(dt) {
-  if (this.moves.w) {
-    this.rect_bounds.t -= 1;
-  }
-
-  if (this.moves.s) {
-    this.rect_bounds.t += 1;
-  }
-
   if (this.moves.left) {
     this.x -= 10;
   }
@@ -266,14 +251,6 @@ Player.prototype.update = function(dt) {
   }
 };
 
-Enemy.prototype.right = function() {
-  return this.x + this.w;
-};
-
-Enemy.prototype.bottom = function() {
-  return this.y + this.h;
-};
-
 Player.prototype.force_screen_bounds = function() {
   if (this.x + this.rect_bounds.l < this.screen_bounds.x) {
     this.x = this.screen_bounds.x - this.rect_bounds.l;
@@ -292,46 +269,29 @@ Player.prototype.force_screen_bounds = function() {
   }
 };
 
+// store the input in "keypresses" table
 Player.prototype.handleInput = function(movement, val) {
   this.moves[movement] = val;
 };
 
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
+Player.keys = {
+    37: 'left',
+    38: 'up',
+    39: 'right',
+    40: 'down',
 
-
+    87: 'up',   // 'w'
+    83: 'down', // 's'
+    65: 'left', // 'a'
+    68: 'right' // 'd'
+};
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
-  var allowedKeys = {
-    37: 'left',
-    38: 'up',
-    39: 'right',
-    40: 'down',
-
-    87: 'w',
-    83: 's',
-    65: 'a',
-    68: 'd'
-  };
-
-  player.handleInput(allowedKeys[e.keyCode], false);
+  player.handleInput(Player.keys[e.keyCode], false);
 });
 
 document.addEventListener('keydown', function(e) {
-  var allowedKeys = {
-    37: 'left',
-    38: 'up',
-    39: 'right',
-    40: 'down',
-
-    87: 'w',
-    83: 's',
-    65: 'a',
-    68: 'd'
-  };
-
-  player.handleInput(allowedKeys[e.keyCode], true);
+  player.handleInput(Player.keys[e.keyCode], true);
 });
