@@ -150,7 +150,6 @@ var Engine = (function(global) {
       }
     }
 
-
     renderEntities();
   }
 
@@ -174,11 +173,12 @@ var Engine = (function(global) {
    * those sorts of things. It's only called once by the init() method.
    */
   function random_enemy() {
-    var enemy_types = [WrappingEnemy, BouncingEnemy, DrunkEnemy];
+    var enemy_types = [DrunkEnemy]; //[WrappingEnemy, BouncingEnemy, DrunkEnemy];
     return enemy_types[Math.floor(Math.random() * enemy_types.length)];
   }
   function reset() {
-    allEnemies = [new (random_enemy())(10, 60), new (random_enemy())(200, 225), new (random_enemy())(300, 150)];
+    var rows = [60, 146, 226];
+    allEnemies = [new (random_enemy())(10, rows[0]), new (random_enemy())(200, rows[1]), new (random_enemy())(300, rows[2])];
     player = new Player(100, 400);
   }
 
