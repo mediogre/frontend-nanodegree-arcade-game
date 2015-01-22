@@ -256,6 +256,43 @@ DrunkEnemy.prototype.update = function(dt) {
   BouncingEnemy.prototype.update.call(this, dt);
 };
 
+var Text = function(text) {
+  this.x = 0;
+  this.y = 45;
+
+  this.text     = text;
+  this.state_   = 0;
+  this.size     = 28;
+  this.max_size = 50;
+  this.speed    = 70;
+
+  this.max_width = canvas.width;
+};
+
+Text.prototype.render = function() {
+  var prev_font = ctx.font;
+
+  ctx.font = this.size + "px sans";
+  var tm   = ctx.measureText(this.text);
+  ctx.fillText(this.text, (this.max_width - tm.width) / 2 + this.x, this.y);
+
+  ctx.font = prev_font;
+};
+
+Text.prototype.update = function(dt) {
+  if (this.state_ == 0 && this.size < this.max_size) {
+    this.size += this.speed * dt;
+    if (this.size > this.max_size) {
+      this.state = 1;
+    }
+  } else if (this.state_ == 1) {
+    this.x += 3 * this.speed * dt;
+    if (this.x > this.max_width) {
+      this.state_ = 2;
+    }
+  }
+};
+
 /**
  * Player - our hero
  * @constructor

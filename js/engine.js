@@ -106,6 +106,9 @@ var Engine = (function(global) {
       enemy.update(dt);
     });
     player.update(dt);
+    texts.forEach(function(t) {
+      t.update(dt);
+    });
   }
 
   /* This function initially draws the "game level", it will then call
@@ -166,20 +169,37 @@ var Engine = (function(global) {
     });
 
     player.render();
+
+    texts.forEach(function(t) {
+      t.render();
+    });
+  }
+
+  var rows = [-20, 60, 146, 226, 300, 405];
+
+  function randomInt(range) {
+    return Math.floor(Math.random() * range);
+  }
+
+  function randomEnemy(row) {
+    var enemy_types = [WrappingEnemy, BouncingEnemy, DrunkEnemy];
+    var enemy = enemy_types[randomInt(enemy_types.length)];
+    var x = randomInt(canvas.width);
+    return new enemy(x, rows[row]);
   }
 
   /* This function does nothing but it could have been a good place to
    * handle game reset states - maybe a new game menu or a game over screen
    * those sorts of things. It's only called once by the init() method.
    */
-  function random_enemy() {
-    var enemy_types = [DrunkEnemy]; //[WrappingEnemy, BouncingEnemy, DrunkEnemy];
-    return enemy_types[Math.floor(Math.random() * enemy_types.length)];
-  }
   function reset() {
-    var rows = [60, 146, 226];
-    allEnemies = [new (random_enemy())(10, rows[0]), new (random_enemy())(200, rows[1]), new (random_enemy())(300, rows[2])];
-    player = new Player(100, 400);
+    allEnemies = [];
+    for (var i = 0; i < 3; i += 1) {
+      allEnemies.push(randomEnemy(i + 1));
+    }
+    player = new Player(202, rows[5]);
+
+    texts = [new Text("GO!!!")];
   }
 
   /* Go ahead and load all of the images we know we're going to need to
