@@ -182,7 +182,7 @@ var Engine = (function(global) {
   }
 
   function randomEnemy(row) {
-    var enemy_types = [WrappingEnemy, BouncingEnemy, DrunkEnemy];
+    var enemy_types = [WrappingEnemy, BouncingEnemy, WildEnemy];
     var enemy = enemy_types[randomInt(enemy_types.length)];
     var x = randomInt(canvas.width);
     return new enemy(x, rows[row]);
@@ -199,7 +199,7 @@ var Engine = (function(global) {
     }
     player = new Player(202, rows[5]);
 
-    texts = [new Text("GO!!!")];
+    texts = [new MultiText(["GRAB", "THAT", "WATER", "AND", "RETURN", "IT", "TO", "GREEN", "PASTURES"])];
   }
 
   /* Go ahead and load all of the images we know we're going to need to

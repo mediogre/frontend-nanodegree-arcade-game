@@ -223,24 +223,24 @@ BouncingEnemy.prototype.render = function() {
  * @constructor
  * @implements {BouncingEnemy}
  */
-var DrunkEnemy = function () {
+var WildEnemy = function () {
   BouncingEnemy.apply(this, arguments);
   this.ticks = 0;
 };
 
-DrunkEnemy.prototype = Object.create(BouncingEnemy.prototype);
-DrunkEnemy.prototype.constructor = DrunkEnemy;
+WildEnemy.prototype = Object.create(BouncingEnemy.prototype);
+WildEnemy.prototype.constructor = WildEnemy;
 
-DrunkEnemy.prototype.update = function(dt) {
+WildEnemy.prototype.update = function(dt) {
   this.ticks += dt;
 
   // change direction/speed spontaneously
   if (this.ticks > 2) {
     this.ticks -= 2;
     var chance = Math.floor(Math.random() * 3);
-    if (chance == 0) {
+    if (chance === 0) {
       this.going_right = !this.going_right;
-    } else if (chance == 1) {
+    } else if (chance === 1) {
       this.speed += 100;
       if (this.speed > 1000) {
         this.speed = 1000;
@@ -256,6 +256,10 @@ DrunkEnemy.prototype.update = function(dt) {
   BouncingEnemy.prototype.update.call(this, dt);
 };
 
+/**
+ * Text object - zooms and slides away
+ * @constructor
+ */
 var Text = function(text) {
   this.x = 0;
   this.y = 45;
@@ -269,6 +273,9 @@ var Text = function(text) {
   this.max_width = canvas.width;
 };
 
+/**
+ * Render the text using current size and position
+ */
 Text.prototype.render = function() {
   var prev_font = ctx.font;
 
@@ -279,18 +286,76 @@ Text.prototype.render = function() {
   ctx.font = prev_font;
 };
 
+/**
+ * Update text size or position (depending on the current state)
+ */
 Text.prototype.update = function(dt) {
-  if (this.state_ == 0 && this.size < this.max_size) {
+  if (this.state_ === 0 && this.size < this.max_size) {
     this.size += this.speed * dt;
     if (this.size > this.max_size) {
-      this.state = 1;
+      this.state_ = 1;
     }
-  } else if (this.state_ == 1) {
+  } else if (this.state_ === 1) {
     this.x += 3 * this.speed * dt;
     if (this.x > this.max_width) {
       this.state_ = 2;
     }
   }
+};
+
+/**
+ * return {boolean} - is text "alive" - i.e still visible
+ */
+Text.prototype.isAlive = function() {
+  return this.state_ !== 2;
+};
+
+/**
+ * Just like Text - but is used to show multiple phrases
+ * @constructor
+ * @implements {Text}
+ * @param {Array.<string>} - strings to display one by one
+ */
+var MultiText = function(strings) {
+  this.texts = strings.map(function(s) {
+    return new Text(s);
+  });
+
+  if (this.texts.length < 1) {
+    this.idx = -1;
+  } else {
+    this.idx = 0;
+  };
+};
+
+/**
+ * Render MultiText - that is render the current "alive" text
+ */
+MultiText.prototype.render = function() {
+  if (this.isAlive()) {
+    this.texts[this.idx].render();
+  }
+};
+
+/**
+ * Update the current text or move to the next one
+ */
+MultiText.prototype.update = function(dt) {
+  if (this.isAlive()) {
+    var text = this.texts[this.idx];
+    if (text.isAlive()) {
+      text.update(dt);
+    } else {
+      this.idx += 1;
+    }
+  }
+};
+
+/** 
+ * MultiText is alive if there's text to show
+ */
+MultiText.prototype.isAlive = function() {
+  return (this.idx > -1 && this.idx < this.texts.length);
 };
 
 /**
