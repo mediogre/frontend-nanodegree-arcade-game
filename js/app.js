@@ -296,7 +296,7 @@ Text.prototype.update = function(dt) {
       this.state_ = 1;
     }
   } else if (this.state_ === 1) {
-    this.x += 3 * this.speed * dt;
+    this.x += 4 * this.speed * dt;
     if (this.x > this.max_width) {
       this.state_ = 2;
     }
@@ -471,9 +471,13 @@ Player.keys = {
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
-  player.handleInput(Player.keys[e.keyCode], false);
+  if (player) {
+    player.handleInput(Player.keys[e.keyCode], false);
+  }
 });
 
 document.addEventListener('keydown', function(e) {
-  player.handleInput(Player.keys[e.keyCode], true);
+  if (player) {
+    player.handleInput(Player.keys[e.keyCode], true);
+  }
 });
