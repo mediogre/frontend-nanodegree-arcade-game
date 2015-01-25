@@ -279,7 +279,7 @@ var Text = function(text) {
 Text.prototype.render = function() {
   var prev_font = ctx.font;
 
-  ctx.font = this.size + "px sans";
+  ctx.font = this.size + "px fantasy";
   var tm   = ctx.measureText(this.text);
   ctx.fillText(this.text, (this.max_width - tm.width) / 2 + this.x, this.y);
 
