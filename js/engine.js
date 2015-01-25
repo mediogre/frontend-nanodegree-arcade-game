@@ -89,8 +89,13 @@ var Engine = (function(global) {
       allEnemies[i].unhit();
       player.collide(allEnemies[i]);
     }
+    // restart the game on failure
     if (player.isHit()) {
       reset();
+    }
+    // restart the game on success as well
+    if (player.reachedWater()) {
+      reset(true);
     }
   }
 
@@ -174,12 +179,16 @@ var Engine = (function(global) {
     });
   }
 
+  // y-values of rows - to make spawning of enemies "easier"
   var rows = [-20, 60, 146, 226, 300, 405];
 
   function randomInt(range) {
     return Math.floor(Math.random() * range);
   }
 
+  /**
+   * Spawn a random type enemy at specified row
+   */
   function randomEnemy(row) {
     var enemy_types = [WrappingEnemy, BouncingEnemy, WildEnemy];
     var enemy = enemy_types[randomInt(enemy_types.length)];
@@ -191,14 +200,18 @@ var Engine = (function(global) {
    * handle game reset states - maybe a new game menu or a game over screen
    * those sorts of things. It's only called once by the init() method.
    */
-  function reset() {
+  function reset(success) {
     allEnemies = [];
     for (var i = 0; i < 3; i += 1) {
       allEnemies.push(randomEnemy(i + 1));
     }
     player = new Player(202, rows[5]);
 
-    texts = [new MultiText(["GRAB", "THAT", "WATER", "AND", "RETURN", "IT", "TO", "GREEN", "PASTURES"])];
+    if (success) {
+      texts = [new MultiText(["CONGRATULATIONS!", "NOW", "REACH", "THAT", "WATER"])];
+    } else {
+      texts = [new MultiText(["REACH", "THAT", "WATER"])];
+    }
   }
 
   /* Go ahead and load all of the images we know we're going to need to

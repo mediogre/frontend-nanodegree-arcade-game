@@ -18,12 +18,18 @@ var Enemy = function(x, y, filename) {
   // a helper we've provided to easily load images
   this.sprite = Resources.get(filename || 'images/enemy-bug.png');
 
+  // width and height - for rendering purposes
   this.w = this.sprite.width;
   this.h = this.sprite.height;
 
+  // tight bounding box - used for collision detecting
   this.rect_bounds = {l: 0, t: 76, r: this.w, b: this.h - 26};
+
+  // screen bounds - used differently by each "enemy"
+  // some would bounce off or wrap around, etc
   this.screen_bounds = {x: 0, y: 52, w: canvas.width,  h: canvas.height - 20};
 
+  // default enemy speed
   this.speed = 222;
 };
 
@@ -124,7 +130,7 @@ Enemy.prototype.debug_render = function() {
  */
 Enemy.prototype.render = function() {
   ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
-  this.debug_render();
+  // this.debug_render();
 };
 
 /**
@@ -140,7 +146,7 @@ WrappingEnemy.prototype = Object.create(Enemy.prototype);
 WrappingEnemy.prototype.constructor = WrappingEnemy;
 
 /**
- * 
+ * move to the edge of the screen and start from the other side
  */
 WrappingEnemy.prototype.update = function(dt) {
   this.x += Math.floor(this.speed * dt);
@@ -149,6 +155,11 @@ WrappingEnemy.prototype.update = function(dt) {
   }
 };
 
+/**
+ * This one uses the default bbox, but adds another one
+ * when the enemy "wraps" around to make sure that that part
+ * can also "hit" the player
+ */
 WrappingEnemy.prototype.bounding_boxes = function() {
   var boxes = Enemy.prototype.bounding_boxes.call(this);
 
@@ -162,6 +173,9 @@ WrappingEnemy.prototype.bounding_boxes = function() {
   return boxes;
 };
 
+/**
+ * Default render + the wrapped part
+ */
 WrappingEnemy.prototype.render = function() {
   var wrapped_part = (this.x + this.rect_bounds.r) - this.screen_bounds.w;
   if (wrapped_part > 0) {
@@ -171,8 +185,7 @@ WrappingEnemy.prototype.render = function() {
                   0, this.y,
                   wrapped_part, this.sprite.height);
   }
-  ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
-  this.debug_render();
+  Enemy.prototype.render.call(this);
 };
 
 /**
@@ -189,6 +202,9 @@ var BouncingEnemy = function () {
 BouncingEnemy.prototype = Object.create(Enemy.prototype);
 BouncingEnemy.prototype.constructor = BouncingEnemy;
 
+/**
+ * Change direction when any edge of the screen is reached
+ */
 BouncingEnemy.prototype.update = function(dt) {
   var displacement = Math.floor(this.speed * dt);
   if (this.going_right) {
@@ -206,13 +222,16 @@ BouncingEnemy.prototype.update = function(dt) {
   }
 };
 
+/**
+ * Default render, but extra twist for mirroring the image when moving to the left
+ */
 BouncingEnemy.prototype.render = function() {
   if (!this.going_right) {
     ctx.save();
     ctx.scale(-1, 1);
     ctx.drawImage(this.sprite, -this.x, this.y, -this.w, this.h);
     ctx.restore();
-    this.debug_render();
+    // this.debug_render();
   } else {
     Enemy.prototype.render.call(this);
   }
@@ -231,6 +250,9 @@ var WildEnemy = function () {
 WildEnemy.prototype = Object.create(BouncingEnemy.prototype);
 WildEnemy.prototype.constructor = WildEnemy;
 
+/**
+ * Every three frames the enemy tries to change either speed or direction
+ */
 WildEnemy.prototype.update = function(dt) {
   this.ticks += dt;
 
@@ -366,6 +388,7 @@ MultiText.prototype.isAlive = function() {
 var Player = function (x, y) {
   Enemy.call(this, x, y, 'images/char-boy.png');
 
+  // player input
   this.moves = {
     left:  false,
     right: false,
@@ -373,19 +396,19 @@ var Player = function (x, y) {
     down:  false
   };
 
-  this.shrink = false;
-  this.max_w  = this.w * 2;
-  this.min_w  = this.w / 2;
-
-  this.do_shrink = false;
-
   this.rect_bounds = {l: 18, t: 64, r: 83, b: 140};
+
+  // player is a bit faster than enemies
   this.speed = 333;
 };
 
 Player.prototype = Object.create(Enemy.prototype);
 Player.prototype.constructor = Player;
 
+/**
+ * Change position based on the input
+ * and make sure that we stay on screen at all times
+ */
 Player.prototype.update = function(dt) {
   var displacement = dt * this.speed;
 
@@ -406,28 +429,17 @@ Player.prototype.update = function(dt) {
   }
 
   this.force_screen_bounds();
+};
 
-  if (this.do_shrink) {
-    var shrink_rate = 4;
-    if (this.shrink) {
-      this.w -= shrink_rate;
-      this.h -= shrink_rate;
-      if (this.w < this.min_w) {
-        this.shrink = false;
-      }
-    } else {
-      this.w += shrink_rate;
-      this.h += shrink_rate;
-      if (this.w > this.max_w) {
-        this.shrink = true;
-      }
-    }
-  }
+/**
+ * Has our hero reached the goal?
+ */
+Player.prototype.reachedWater = function() {
+  return this.y < -10;
 };
 
 /**
  * Make sure that player stays within screen bounds 
- * 
  */
 Player.prototype.force_screen_bounds = function() {
   if (this.x + this.rect_bounds.l < this.screen_bounds.x) {
