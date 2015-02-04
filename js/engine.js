@@ -6,7 +6,7 @@
  * A game engine works by drawing the entire game screen over and over, kind of
  * like a flipbook you may have created as a kid. When your player moves across
  * the screen, it may look like just that image/character is moving or being
- * drawn but that is not the case. What's really happening is the entire "scene"
+ * drawn but that is not the case. What's really happening is the entire 'scene'
  * is being drawn over and over, presenting the illusion of animation.
  *
  * This engine is available globally via the Engine variable and it also makes
@@ -19,11 +19,11 @@ var Engine = (function(global) {
    * create the canvas element, grab the 2D context for that canvas
    * set the canvas elements height/width and add it to the DOM.
    */
-  var doc = global.document,
-      win = global.window,
-      canvas = doc.createElement('canvas'),
-      ctx = canvas.getContext('2d'),
-      lastTime;
+  var doc = global.document;
+  var win = global.window;
+  var canvas = doc.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  var lastTime;
 
   canvas.width = 505;
   canvas.height = 606;
@@ -39,8 +39,8 @@ var Engine = (function(global) {
      * would be the same for everyone (regardless of how fast their
      * computer is) - hurray time!
      */
-    var now = Date.now(),
-        dt = (now - lastTime) / 1000.0;
+    var now = Date.now();
+    var dt = (now - lastTime) / 1000.0;
 
     /* Call our update/render functions, pass along the time delta to
      * our update function since it may be used for smooth animation.
@@ -116,7 +116,7 @@ var Engine = (function(global) {
     });
   }
 
-  /* This function initially draws the "game level", it will then call
+  /* This function initially draws the 'game level', it will then call
    * the renderEntities function. Remember, this function is called every
    * game tick (or loop of the game engine) because that's how games work -
    * they are flipbooks creating the illusion of animation but in reality
@@ -133,16 +133,16 @@ var Engine = (function(global) {
       'images/stone-block.png',   // Row 3 of 3 of stone
       'images/grass-block.png',   // Row 1 of 2 of grass
       'images/grass-block.png'    // Row 2 of 2 of grass
-    ],
-        numRows = 6,
-        numCols = 5,
-        row, col;
+    ];
+    var numRows = 6;
+    var numCols = 5;
+    var row, col;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     /* Loop through the number of rows and columns we've defined above
      * and, using the rowImages array, draw the correct image for that
-     * portion of the "grid"
+     * portion of the 'grid'
      */
     for (row = 0; row < numRows; row++) {
       for (col = 0; col < numCols; col++) {
@@ -179,9 +179,10 @@ var Engine = (function(global) {
     });
   }
 
-  // y-values of rows - to make spawning of enemies "easier"
+  // y-values of rows - to make spawning of enemies 'easier'
   var rows = [-20, 60, 146, 226, 300, 405];
 
+  // generate random integer between 0 and range-1
   function randomInt(range) {
     return Math.floor(Math.random() * range);
   }
@@ -201,18 +202,23 @@ var Engine = (function(global) {
    * those sorts of things. It's only called once by the init() method.
    */
   function reset(success) {
+    // create new enemies of random type
     allEnemies = [];
     for (var i = 0; i < 3; i += 1) {
       allEnemies.push(randomEnemy(i + 1));
     }
+    // spawn new player
     player = new Player(202, rows[5]);
 
+    // prepare instructive messages
+    var messages = ['REACH', 'THAT', 'WATER'];
     if (success) {
-      texts = [new MultiText(["CONGRATULATIONS!", "NOW", "REACH", "THAT", "WATER"])];
-    } else {
-      texts = [new MultiText(["REACH", "THAT", "WATER"])];
+      messages = ['CONGRATULATIONS!', 'NOW'].concat(messages);
     }
-  }
+
+    // create texts objects
+    texts = [new MultiText(messages)];
+   }
 
   /* Go ahead and load all of the images we know we're going to need to
    * draw our game level. Then set init as the callback method, so that when
