@@ -25,14 +25,36 @@ var Engine = (function(global) {
   var ctx = canvas.getContext('2d');
   var lastTime;
 
+  // setting this to true would reset the game on the next frame
+  var reset_request = false;
+
+  // this parameter will be passed to reset function upon reset_request
+  var reset_param;
+
   canvas.width = 505;
   canvas.height = 606;
   doc.body.appendChild(canvas);
+
+  /**
+   * This function is used to 'post a request' for resetting the game
+   * @param {boolean} arg - the value that will be passed to reset
+   */
+  function request_reset(arg) {
+    reset_request = true;
+    reset_param   = arg;
+  }
 
   /* This function serves as the kickoff point for the game loop itself
    * and handles properly calling the update and render methods.
    */
   function main() {
+    if (reset_request) {
+      reset(reset_param);
+
+      // clean up reset "state"
+      reset_request = false;
+      reset_param   = null;
+    }
     /* Get our time delta information which is required if your game
      * requires smooth animation. Because everyone's computer processes
      * instructions at different speeds we need a constant value that
@@ -91,11 +113,11 @@ var Engine = (function(global) {
     }
     // restart the game on failure
     if (player.isHit()) {
-      reset();
+      request_reset(false);
     }
     // restart the game on success as well
     if (player.reachedWater()) {
-      reset(true);
+      request_reset(true);
     }
   }
 
@@ -111,9 +133,17 @@ var Engine = (function(global) {
       enemy.update(dt);
     });
     player.update(dt);
-    texts.forEach(function(t) {
-      t.update(dt);
+
+    var survivors = [];
+    critters.forEach(function(thing) {
+      if (thing.isAlive()) {
+        // keep this critter (for the next frame at least) if it's alive
+        survivors.push(thing);
+        // make sure it does its thing too
+        thing.update(dt);
+      }
     });
+    critters = survivors;
   }
 
   /* This function initially draws the 'game level', it will then call
@@ -174,8 +204,8 @@ var Engine = (function(global) {
 
     player.render();
 
-    texts.forEach(function(t) {
-      t.render();
+    critters.forEach(function(thing) {
+      thing.render();
     });
   }
 
@@ -216,8 +246,14 @@ var Engine = (function(global) {
       messages = ['CONGRATULATIONS!', 'NOW'].concat(messages);
     }
 
-    // create texts objects
-    texts = [new MultiText(messages)];
+    // create critters
+    critters = [
+      new Chronos(10,
+                  function() {
+                    request_reset();
+                  }),
+      new MultiText(messages)
+    ];
    }
 
   /* Go ahead and load all of the images we know we're going to need to

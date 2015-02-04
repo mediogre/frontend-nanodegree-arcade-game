@@ -151,7 +151,7 @@ Enemy.prototype.render = function() {
  * @constructor
  * @implements {Enemy}
  */
-var WrappingEnemy = function () {
+var WrappingEnemy = function() {
   Enemy.apply(this, arguments);
 };
 
@@ -219,7 +219,7 @@ WrappingEnemy.prototype.render = function() {
  * @constructor
  * @implements {Enemy}
  */
-var BouncingEnemy = function () {
+var BouncingEnemy = function() {
   Enemy.apply(this, arguments);
 
   // this type of enemy goes both directions
@@ -273,7 +273,7 @@ BouncingEnemy.prototype.render = function() {
  * @constructor
  * @implements {BouncingEnemy}
  */
-var WildEnemy = function () {
+var WildEnemy = function() {
   BouncingEnemy.apply(this, arguments);
 
   // @private - internal time used to trigger change of speed/direction
@@ -444,6 +444,53 @@ MultiText.prototype.update = function(dt) {
 };
 
 /**
+ * Time keeper object.
+ * It keeps time, displays it and restarts the game when it's (hmm) time.
+ * @constructor
+ * @param {number} target_time - how long until the end
+ * @param {function()} fn - function to call when time is up
+ */
+var Chronos = function(target_time, fn) {
+  // @private - current time in seconds
+  this.time_ = 0;
+
+  // @private - the end of the line time
+  this.target_time_ = target_time;
+
+  // @private - hook to call
+  this.fn_ = fn;
+};
+
+Chronos.prototype.render = function() {
+  var prevFont = ctx.font;
+  var prevFillStyle = ctx.fillStyle;
+
+  // red alert if time is running out (less than 30% left)
+  if ((this.target_time_ - this.time_) < (this.target_time_ * 0.3)) {
+    ctx.fillStyle = "red";
+  }
+  ctx.font = '20px fantasy';
+  ctx.fillText(this.time_.toFixed(2), 10, 27);
+
+  // restore ctx state
+  ctx.fillStyle = prevFillStyle;
+  ctx.font = prevFont;
+};
+
+Chronos.prototype.update = function(dt) {
+  this.time_ += dt;
+
+  // call our hook function if the time has come
+  if (!this.isAlive()) {
+    this.fn_();
+  }
+};
+
+Chronos.prototype.isAlive = function() {
+  return this.time_ < this.target_time_;
+};
+
+/**
  * MultiText is alive if there's text to show
  */
 MultiText.prototype.isAlive = function() {
@@ -455,7 +502,7 @@ MultiText.prototype.isAlive = function() {
  * @constructor
  * @implements {Enemy}
  */
-var Player = function (x, y) {
+var Player = function(x, y) {
   Enemy.call(this, x, y, 'images/char-boy.png');
 
   // player input
