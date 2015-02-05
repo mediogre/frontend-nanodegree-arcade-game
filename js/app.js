@@ -52,10 +52,8 @@ var Enemy = function(x, y, filename) {
  * @return {boolean} if they intersect each other
  */
 Enemy.rects_intersect = function(a, b) {
-  return !(a.right < b.left ||
-           b.right < a.left ||
-           a.bottom < b.top ||
-           b.bottom < a.top);
+  return !(a.right < b.left || b.right < a.left ||
+           a.bottom < b.top || b.bottom < a.top);
 };
 
 /**
@@ -93,7 +91,7 @@ Enemy.prototype.isHit = function() {
  */
 Enemy.prototype.collide = function(other) {
   var other_rects = other.bounding_boxes();
-  var own_rects   = this.bounding_boxes();
+  var own_rects = this.bounding_boxes();
 
   for (var i = 0, l = own_rects.length; i < l; i++) {
     for (var j = 0, ol = other_rects.length; j < ol; j++) {
@@ -161,6 +159,7 @@ WrappingEnemy.prototype.constructor = WrappingEnemy;
 
 /**
  * Move to the edge of the screen and start from the other side
+ * @param {number} dt - a time delta between ticks
  */
 WrappingEnemy.prototype.update = function(dt) {
   // move to the right with current speed
@@ -176,6 +175,7 @@ WrappingEnemy.prototype.update = function(dt) {
  * This one uses the default bounding box, but adds another one
  * when the enemy 'wraps' around to make sure that that part
  * can also 'hit' the player
+ * @return {{left: number, top: number, right: number, bottom: number}}
  */
 WrappingEnemy.prototype.bounding_boxes = function() {
   var boxes = Enemy.prototype.bounding_boxes.call(this);
@@ -233,6 +233,7 @@ BouncingEnemy.prototype.constructor = BouncingEnemy;
 
 /**
  * Change direction when any edge of the screen is reached
+ * @param {number} dt - a time delta between ticks
  */
 BouncingEnemy.prototype.update = function(dt) {
   var displacement = Math.floor(this.speed * dt);
@@ -291,7 +292,7 @@ var WildEnemy = function() {
   this.max_speed_ = 1000;
 
   // @private - time (in seconds) when to change current state
-  this.decision_time_= 2;
+  this.decision_time_ = 2;
 };
 
 WildEnemy.prototype = Object.create(BouncingEnemy.prototype);
@@ -299,6 +300,7 @@ WildEnemy.prototype.constructor = WildEnemy;
 
 /**
  * Every three frames the enemy tries to change either speed or direction
+ * @param {number} dt - a time delta between ticks
  */
 WildEnemy.prototype.update = function(dt) {
   this.time_ += dt;
@@ -337,6 +339,7 @@ WildEnemy.prototype.update = function(dt) {
 /**
  * Text object - zooms and slides away
  * @constructor
+ * @param {string} text - string to show
  */
 var Text = function(text) {
   // screen position
@@ -344,22 +347,22 @@ var Text = function(text) {
   this.y = 45;
 
   // text itself
-  this.text     = text;
+  this.text = text;
 
   // current size of the font
-  this.size     = 28;
+  this.size = 28;
 
   // maximum size of the font
   this.max_size = 50;
 
   // movement speed (when sliding)
-  this.speed    = 70;
+  this.speed = 70;
 
   // @private - internal state:
   // - 0 - zooming out
   // - 1 - sliding away
   // - 2 - dead
-  this.state_   = 0;
+  this.state_ = 0;
 
   // screen width
   this.max_width = canvas.width;
@@ -372,7 +375,7 @@ Text.prototype.render = function() {
   var prev_font = ctx.font;
 
   ctx.font = this.size + 'px fantasy';
-  var tm   = ctx.measureText(this.text);
+  var tm = ctx.measureText(this.text);
   ctx.fillText(this.text, (this.max_width - tm.width) / 2 + this.x, this.y);
 
   ctx.font = prev_font;
@@ -380,6 +383,7 @@ Text.prototype.render = function() {
 
 /**
  * Update text size or position (depending on the current state)
+ * @param {number} dt - a time delta between ticks
  */
 Text.prototype.update = function(dt) {
   if (this.state_ === 0 && this.size < this.max_size) {
@@ -399,7 +403,7 @@ Text.prototype.update = function(dt) {
 };
 
 /**
- * return {boolean} - is text 'alive' - i.e still visible
+ * @return {boolean} - is text 'alive' - i.e still visible
  */
 Text.prototype.isAlive = function() {
   return this.state_ !== 2;
@@ -429,7 +433,7 @@ MultiText.prototype.render = function() {
 };
 
 /**
- * MultiText is alive if there's text to show
+ * @return {boolean} - MultiText is alive if there's text to show
  */
 MultiText.prototype.isAlive = function() {
   return (this.idx > -1 && this.idx < this.texts.length);
@@ -437,6 +441,7 @@ MultiText.prototype.isAlive = function() {
 
 /**
  * Update the current text or move to the next one
+ * @param {number} dt - a time delta between ticks
  */
 MultiText.prototype.update = function(dt) {
   if (this.isAlive()) {
@@ -478,7 +483,7 @@ Chronos.prototype.render = function() {
 
   // red alert if time is running out (less than 30% left)
   if (this.redZone()) {
-    ctx.fillStyle = "red";
+    ctx.fillStyle = 'red';
   }
   ctx.font = '20px fantasy';
   ctx.fillText(this.timeLeft().toFixed(2), 10, 27);
@@ -506,6 +511,7 @@ Chronos.prototype.redZone = function() {
  * Update logic:
  * - increase passed time
  * - invoke callback if time has come for that
+ * @param {number} dt - a time delta between ticks
  */
 Chronos.prototype.update = function(dt) {
   this.time_ += dt;
@@ -551,6 +557,12 @@ var Bonus = function(x, y, filename) {
 Bonus.prototype = Object.create(Enemy.prototype);
 Bonus.prototype.constructor = Bonus;
 
+/**
+ * Bonus update logic:
+ * - slide down the screen (and die if reached the bottom)
+ * - check if player picked us up
+ * @param {number} dt - a time delta between ticks
+ */
 Bonus.prototype.update = function(dt) {
   this.y += this.speed * dt;
 
@@ -562,7 +574,7 @@ Bonus.prototype.update = function(dt) {
   // check if player caught the bonus
   // TODO: refactor Enemy.collide to be able to re-use it
   var player_rects = player.bounding_boxes();
-  var own_rects    = this.bounding_boxes();
+  var own_rects = this.bounding_boxes();
 
 done:
   for (var i = 0, l = own_rects.length; i < l; i++) {
@@ -587,6 +599,9 @@ Bonus.prototype.applyBonus = function(receiver) {
   this.alive_ = false;
 };
 
+/**
+ * @return {boolean} - is bonus still alive?
+ */
 Bonus.prototype.isAlive = function() {
   return this.alive_;
 };
@@ -595,6 +610,8 @@ Bonus.prototype.isAlive = function() {
  * Player - our hero
  * @constructor
  * @implements {Enemy}
+ * @param {number} x - initial x position of the bonus
+ * @param {number} y - initial y position of the bonus
  */
 var Player = function(x, y) {
   Enemy.call(this, x, y, 'images/char-boy.png');
@@ -625,6 +642,7 @@ Player.prototype.constructor = Player;
 /**
  * Change position based on the input
  * and make sure that we stay on screen at all times
+ * @param {number} dt - a time delta between ticks
  */
 Player.prototype.update = function(dt) {
   var displacement = dt * this.speed;
@@ -649,7 +667,7 @@ Player.prototype.update = function(dt) {
 };
 
 /**
- * Has our hero reached the goal?
+ * @return {boolean} - has our hero reached the goal?
  */
 Player.prototype.reachedWater = function() {
   return this.y < -10;
@@ -676,9 +694,13 @@ Player.prototype.force_screen_bounds = function() {
   }
 };
 
-// store the input in 'keypresses' table
-Player.prototype.handleInput = function(movement, val) {
-  this.moves[movement] = val;
+/**
+ * Store the input in 'keypresses' table
+ * @param {string} movement - one of 'left', 'up', 'right' or 'down'
+   * @param {boolean} pressed - is it keypress or keyrelease
+ */
+Player.prototype.handleInput = function(movement, pressed) {
+  this.moves[movement] = pressed;
 };
 
 /**

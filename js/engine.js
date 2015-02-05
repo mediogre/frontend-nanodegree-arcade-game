@@ -41,7 +41,7 @@ var Engine = (function(global) {
    */
   function request_reset(arg) {
     reset_request = true;
-    reset_param   = arg;
+    reset_param = arg;
   }
 
   /* This function serves as the kickoff point for the game loop itself
@@ -53,7 +53,7 @@ var Engine = (function(global) {
 
       // clean up reset "state"
       reset_request = false;
-      reset_param   = null;
+      reset_param = null;
     }
     /* Get our time delta information which is required if your game
      * requires smooth animation. Because everyone's computer processes
