@@ -253,7 +253,7 @@ var Engine = (function(global) {
                     requestReset();
                   }),
       new MultiText(messages),
-      new Bonus(100, 100)
+      new Bonus(randomInt(400), 10)
     ];
    }
 
