@@ -26,10 +26,10 @@ var Engine = (function(global) {
   var lastTime;
 
   // setting this to true would reset the game on the next frame
-  var reset_request = false;
+  var resetRequest = false;
 
-  // this parameter will be passed to reset function upon reset_request
-  var reset_param;
+  // this parameter will be passed to reset function upon resetRequest
+  var resetParam;
 
   canvas.width = 505;
   canvas.height = 606;
@@ -39,21 +39,21 @@ var Engine = (function(global) {
    * This function is used to 'post a request' for resetting the game
    * @param {boolean} arg - the value that will be passed to reset
    */
-  function request_reset(arg) {
-    reset_request = true;
-    reset_param = arg;
+  function requestReset(arg) {
+    resetRequest = true;
+    resetParam = arg;
   }
 
   /* This function serves as the kickoff point for the game loop itself
    * and handles properly calling the update and render methods.
    */
   function main() {
-    if (reset_request) {
-      reset(reset_param);
+    if (resetRequest) {
+      reset(resetParam);
 
       // clean up reset "state"
-      reset_request = false;
-      reset_param = null;
+      resetRequest = false;
+      resetParam = null;
     }
     /* Get our time delta information which is required if your game
      * requires smooth animation. Because everyone's computer processes
@@ -113,11 +113,11 @@ var Engine = (function(global) {
     }
     // restart the game on failure
     if (player.isHit()) {
-      request_reset(false);
+      requestReset(false);
     }
     // restart the game on success as well
     if (player.reachedWater()) {
-      request_reset(true);
+      requestReset(true);
     }
   }
 
@@ -221,8 +221,8 @@ var Engine = (function(global) {
    * Spawn a random type enemy at specified row
    */
   function randomEnemy(row) {
-    var enemy_types = [WrappingEnemy, BouncingEnemy, WildEnemy];
-    var enemy = enemy_types[randomInt(enemy_types.length)];
+    var enemyTypes = [WrappingEnemy, BouncingEnemy, WildEnemy];
+    var enemy = enemyTypes[randomInt(enemyTypes.length)];
     var x = randomInt(canvas.width);
     return new enemy(x, rows[row]);
   }
@@ -250,7 +250,7 @@ var Engine = (function(global) {
     critters = [
       new Chronos(10,
                   function() {
-                    request_reset();
+                    requestReset();
                   }),
       new MultiText(messages),
       new Bonus(100, 100)

@@ -22,16 +22,16 @@ var Enemy = function(x, y, filename) {
   this.h = this.sprite.height;
 
   // tight bounding box - used for collision detecting
-  this.rect_bounds = {
+  this.rectBounds = {
     left: 0,
     top: 76,
     right: this.w,
     bottom: this.h - 26
   };
 
-  // screen bounds - used differently by each 'enemy'
+  // screen bounds - used differently by each enemy type
   // some would bounce off or wrap around, etc
-  this.screen_bounds = {
+  this.screenBounds = {
     x: 0,
     y: 52,
     width: canvas.width,
@@ -51,7 +51,7 @@ var Enemy = function(x, y, filename) {
  * @param {{left: number, top: number, right: number, bottom: number}} b
  * @return {boolean} if they intersect each other
  */
-Enemy.rects_intersect = function(a, b) {
+Enemy.rectsIntersect = function(a, b) {
   return !(a.right < b.left || b.right < a.left ||
            a.bottom < b.top || b.bottom < a.top);
 };
@@ -90,12 +90,12 @@ Enemy.prototype.isHit = function() {
  * Mark both self and other as hit if at least one pair of boxes intersect.
  */
 Enemy.prototype.collide = function(other) {
-  var other_rects = other.bounding_boxes();
-  var own_rects = this.bounding_boxes();
+  var otherRects = other.boundingBoxes();
+  var ownRects = this.boundingBoxes();
 
-  for (var i = 0, l = own_rects.length; i < l; i++) {
-    for (var j = 0, ol = other_rects.length; j < ol; j++) {
-      if (Enemy.rects_intersect(own_rects[i], other_rects[j])) {
+  for (var i = 0, l = ownRects.length; i < l; i++) {
+    for (var j = 0, ol = otherRects.length; j < ol; j++) {
+      if (Enemy.rectsIntersect(ownRects[i], otherRects[j])) {
         this.hit();
         other.hit();
         return;
@@ -109,23 +109,23 @@ Enemy.prototype.collide = function(other) {
  * However, subclasses may add more as needed
  * @return {{left: number, top: number, right: number, bottom: number}}
  */
-Enemy.prototype.bounding_boxes = function() {
+Enemy.prototype.boundingBoxes = function() {
   return [{
-    left: this.x + this.rect_bounds.left,
-    top: this.y + this.rect_bounds.top,
-    right: this.x + this.rect_bounds.right,
-    bottom: this.y + this.rect_bounds.bottom
+    left: this.x + this.rectBounds.left,
+    top: this.y + this.rectBounds.top,
+    right: this.x + this.rectBounds.right,
+    bottom: this.y + this.rectBounds.bottom
   }];
 };
 
 /**
  * Debug-render - draw bbox(es) of the enemy if it is hit
  */
-Enemy.prototype.debug_render = function() {
+Enemy.prototype.debugRender = function() {
   var prevStrokeStyle = ctx.strokeStyle;
   ctx.strokeStyle = this.isHit() ? 'red' : 'green';
 
-  var boxes = this.bounding_boxes();
+  var boxes = this.boundingBoxes();
   var i, l, box;
   for (i = 0, l = boxes.length; i < l; i++) {
     box = boxes[i];
@@ -142,7 +142,6 @@ Enemy.prototype.debug_render = function() {
  */
 Enemy.prototype.render = function() {
   ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
-  this.debug_render();
 };
 
 /**
@@ -166,7 +165,7 @@ WrappingEnemy.prototype.update = function(dt) {
   this.x += Math.floor(this.speed * dt);
 
   // re-enter from the left if moved past the right edge of the screen
-  if (this.x > this.screen_bounds.width) {
+  if (this.x > this.screenBounds.width) {
     this.x = 0;
   }
 };
@@ -177,18 +176,18 @@ WrappingEnemy.prototype.update = function(dt) {
  * can also 'hit' the player
  * @return {{left: number, top: number, right: number, bottom: number}}
  */
-WrappingEnemy.prototype.bounding_boxes = function() {
-  var boxes = Enemy.prototype.bounding_boxes.call(this);
+WrappingEnemy.prototype.boundingBoxes = function() {
+  var boxes = Enemy.prototype.boundingBoxes.call(this);
 
-  var wrapped_part = (this.x + this.rect_bounds.right) -
-        this.screen_bounds.width;
+  // calculate the invisible part of the enemy (if any)
+  var wrapped = (this.x + this.rectBounds.right) - this.screenBounds.width;
 
-  if (wrapped_part > 0) {
+  if (wrapped > 0) {
     boxes.push({
       left: 0,
-      top: this.y + this.rect_bounds.top,
-      right: wrapped_part,
-      bottom: this.y + this.rect_bounds.bottom
+      top: this.y + this.rectBounds.top,
+      right: wrapped,
+      bottom: this.y + this.rectBounds.bottom
     });
   }
   return boxes;
@@ -199,16 +198,15 @@ WrappingEnemy.prototype.bounding_boxes = function() {
  */
 WrappingEnemy.prototype.render = function() {
   // check if some part of the sprite is past the right edge of the screen
-  var wrapped_part = (this.x + this.rect_bounds.right) -
-        this.screen_bounds.width;
+  var wrappedPart = (this.x + this.rectBounds.right) - this.screenBounds.width;
 
   // if it is - draw that part at the left edge
-  if (wrapped_part > 0) {
+  if (wrappedPart > 0) {
     ctx.drawImage(this.sprite,
-                  this.screen_bounds.width - this.x, 0,
-                  wrapped_part, this.sprite.height,
+                  this.screenBounds.width - this.x, 0,
+                  wrappedPart, this.sprite.height,
                   0, this.y,
-                  wrapped_part, this.sprite.height);
+                  wrappedPart, this.sprite.height);
   }
 
   // call 'super' for the rest of rending to take care of itself
@@ -225,7 +223,7 @@ var BouncingEnemy = function() {
 
   // this type of enemy goes both directions
   // a simple boolean (right or left) flag would suffice
-  this.going_right = true;
+  this.goingRight = true;
 };
 
 BouncingEnemy.prototype = Object.create(Enemy.prototype);
@@ -240,17 +238,17 @@ BouncingEnemy.prototype.update = function(dt) {
 
   // handle either direction:
   // try to move and then flip the directon if an edge was reached
-  if (this.going_right) {
+  if (this.goingRight) {
     this.x += displacement;
-    if (this.x + this.rect_bounds.left > this.screen_bounds.width) {
-      this.x = this.screen_bounds.width;
-      this.going_right = false;
+    if (this.x + this.rectBounds.left > this.screenBounds.width) {
+      this.x = this.screenBounds.width;
+      this.goingRight = false;
     }
   } else {
     this.x -= displacement;
-    if (this.x + this.rect_bounds.right < 0) {
-      this.x = -this.rect_bounds.right;
-      this.going_right = true;
+    if (this.x + this.rectBounds.right < 0) {
+      this.x = -this.rectBounds.right;
+      this.goingRight = true;
     }
   }
 };
@@ -260,7 +258,7 @@ BouncingEnemy.prototype.update = function(dt) {
  * when moving to the left
  */
 BouncingEnemy.prototype.render = function() {
-  if (!this.going_right) {
+  if (!this.goingRight) {
     ctx.save();
     ctx.scale(-1, 1);
     ctx.drawImage(this.sprite, -this.x, this.y, -this.w, this.h);
@@ -283,16 +281,16 @@ var WildEnemy = function() {
 
   // @private - the quantum of speed change
   // used when speeding up/slowing down
-  this.speed_change_ = 100;
+  this.speedChange_ = 100;
 
   // @private - can't move any slower than this
-  this.min_speed_ = 100;
+  this.minSpeed_ = 100;
 
   // @private - max allowed speed
-  this.max_speed_ = 1000;
+  this.maxSpeed_ = 1000;
 
   // @private - time (in seconds) when to change current state
-  this.decision_time_ = 2;
+  this.decisionTime_ = 2;
 };
 
 WildEnemy.prototype = Object.create(BouncingEnemy.prototype);
@@ -306,8 +304,8 @@ WildEnemy.prototype.update = function(dt) {
   this.time_ += dt;
 
   // change direction/speed spontaneously
-  if (this.time_ > this.decision_time_) {
-    this.time_ -= this.decision_time_;
+  if (this.time_ > this.decisionTime_) {
+    this.time_ -= this.decisionTime_;
 
     // do one of 3 things:
     // - change direction
@@ -316,18 +314,18 @@ WildEnemy.prototype.update = function(dt) {
     var chance = Math.floor(Math.random() * 3);
     if (chance === 0) {
       // change direction
-      this.going_right = !this.going_right;
+      this.goingRight = !this.goingRight;
     } else if (chance === 1) {
       // increase speed
-      this.speed += this.speed_change_;
-      if (this.speed > this.max_speed_) {
-        this.speed = this.max_speed_;
+      this.speed += this.speedChange_;
+      if (this.speed > this.maxSpeed_) {
+        this.speed = this.maxSpeed_;
       }
     } else {
       // decrease speed
-      this.speed -= this.speed_change_;
-      if (this.speed < this.min_speed_) {
-        this.speed = this.min_speed_;
+      this.speed -= this.speedChange_;
+      if (this.speed < this.minSpeed_) {
+        this.speed = this.minSpeed_;
       }
     }
   }
@@ -353,7 +351,7 @@ var Text = function(text) {
   this.size = 28;
 
   // maximum size of the font
-  this.max_size = 50;
+  this.maxSize = 50;
 
   // movement speed (when sliding)
   this.speed = 70;
@@ -365,20 +363,20 @@ var Text = function(text) {
   this.state_ = 0;
 
   // screen width
-  this.max_width = canvas.width;
+  this.maxWidth = canvas.width;
 };
 
 /**
  * Render the text using current size and position
  */
 Text.prototype.render = function() {
-  var prev_font = ctx.font;
+  var prevFont = ctx.font;
 
   ctx.font = this.size + 'px fantasy';
   var tm = ctx.measureText(this.text);
-  ctx.fillText(this.text, (this.max_width - tm.width) / 2 + this.x, this.y);
+  ctx.fillText(this.text, (this.maxWidth - tm.width) / 2 + this.x, this.y);
 
-  ctx.font = prev_font;
+  ctx.font = prevFont;
 };
 
 /**
@@ -386,16 +384,16 @@ Text.prototype.render = function() {
  * @param {number} dt - a time delta between ticks
  */
 Text.prototype.update = function(dt) {
-  if (this.state_ === 0 && this.size < this.max_size) {
+  if (this.state_ === 0 && this.size < this.maxSize) {
     // zoom out
     this.size += this.speed * dt;
-    if (this.size > this.max_size) {
+    if (this.size > this.maxSize) {
       this.state_ = 1;
     }
   } else if (this.state_ === 1) {
     // slide
     this.x += 4 * this.speed * dt;
-    if (this.x > this.max_width) {
+    if (this.x > this.maxWidth) {
       // die
       this.state_ = 2;
     }
@@ -460,15 +458,15 @@ MultiText.prototype.update = function(dt) {
  * Time keeper object.
  * It keeps time, displays it and restarts the game when it's (hmm) time.
  * @constructor
- * @param {number} target_time - how long until the end
+ * @param {number} targetTime - how long until the end
  * @param {function()} fn - function to call when time is up
  */
-var Chronos = function(target_time, fn) {
+var Chronos = function(targetTime, fn) {
   // @private - current time in seconds
   this.time_ = 0;
 
   // @private - the end of the line time
-  this.target_time_ = target_time;
+  this.targetTime_ = targetTime;
 
   // @private - hook to call
   this.fn_ = fn;
@@ -497,14 +495,14 @@ Chronos.prototype.render = function() {
  * @return {number} time left until callback will be called
  */
 Chronos.prototype.timeLeft = function() {
-  return this.target_time_ - this.time_;
+  return this.targetTime_ - this.time_;
 };
 
 /**
  * @return {boolean} - if time is almost up (less than 30% left)
  */
 Chronos.prototype.redZone = function() {
-  return ((this.target_time_ - this.time_) < (this.target_time_ * 0.3));
+  return ((this.targetTime_ - this.time_) < (this.targetTime_ * 0.3));
 };
 
 /**
@@ -526,7 +524,7 @@ Chronos.prototype.update = function(dt) {
  * @return {boolean} - is there still time left?
  */
 Chronos.prototype.isAlive = function() {
-  return this.time_ < this.target_time_;
+  return this.time_ < this.targetTime_;
 };
 
 /**
@@ -541,13 +539,15 @@ Chronos.prototype.isAlive = function() {
 var Bonus = function(x, y, filename) {
   Enemy.call(this, x, y, filename || 'images/Star.png');
 
-  this.rect_bounds = {
+  // bounding box describing grabbable part of the image
+  this.rectBounds = {
     left: 15,
     top: 66,
     right: this.w - 15,
     bottom: this.h - 35
   };
 
+  // vertical speed
   this.speed = 100;
 
   // @private - bonus is alive until it is caught or flies off the screen
@@ -567,19 +567,19 @@ Bonus.prototype.update = function(dt) {
   this.y += this.speed * dt;
 
   // make sure bonus dies after falling off the screen
-  if (this.y > this.screen_bounds.height) {
+  if (this.y > this.screenBounds.height) {
     this.alive_ = false;
   }
 
   // check if player caught the bonus
   // TODO: refactor Enemy.collide to be able to re-use it
-  var player_rects = player.bounding_boxes();
-  var own_rects = this.bounding_boxes();
+  var playerRects = player.boundingBoxes();
+  var ownRects = this.boundingBoxes();
 
 done:
-  for (var i = 0, l = own_rects.length; i < l; i++) {
-    for (var j = 0, ol = player_rects.length; j < ol; j++) {
-      if (Enemy.rects_intersect(own_rects[i], player_rects[j])) {
+  for (var i = 0, l = ownRects.length; i < l; i++) {
+    for (var j = 0, ol = playerRects.length; j < ol; j++) {
+      if (Enemy.rectsIntersect(ownRects[i], playerRects[j])) {
         this.applyBonus(player);
         break done;
       }
@@ -625,7 +625,7 @@ var Player = function(x, y) {
   };
 
   // use correct bounds for boy character
-  this.rect_bounds = {
+  this.rectBounds = {
     left: 18,
     top: 64,
     right: 83,
@@ -663,7 +663,7 @@ Player.prototype.update = function(dt) {
     this.y += displacement;
   }
 
-  this.force_screen_bounds();
+  this.forceScreenBounds();
 };
 
 /**
@@ -676,21 +676,21 @@ Player.prototype.reachedWater = function() {
 /**
  * Make sure that player stays within screen bounds
  */
-Player.prototype.force_screen_bounds = function() {
-  if (this.x + this.rect_bounds.left < this.screen_bounds.x) {
-    this.x = this.screen_bounds.x - this.rect_bounds.left;
+Player.prototype.forceScreenBounds = function() {
+  if (this.x + this.rectBounds.left < this.screenBounds.x) {
+    this.x = this.screenBounds.x - this.rectBounds.left;
   }
 
-  if (this.x + this.rect_bounds.right > this.screen_bounds.width) {
-    this.x = this.screen_bounds.width - this.rect_bounds.right;
+  if (this.x + this.rectBounds.right > this.screenBounds.width) {
+    this.x = this.screenBounds.width - this.rectBounds.right;
   }
 
-  if (this.y + this.rect_bounds.top < this.screen_bounds.y) {
-    this.y = this.screen_bounds.y - this.rect_bounds.top;
+  if (this.y + this.rectBounds.top < this.screenBounds.y) {
+    this.y = this.screenBounds.y - this.rectBounds.top;
   }
 
-  if (this.y + this.rect_bounds.bottom > this.screen_bounds.height) {
-    this.y = this.screen_bounds.height - this.rect_bounds.bottom;
+  if (this.y + this.rectBounds.bottom > this.screenBounds.height) {
+    this.y = this.screenBounds.height - this.rectBounds.bottom;
   }
 };
 
