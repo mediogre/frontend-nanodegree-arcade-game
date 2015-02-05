@@ -144,6 +144,7 @@ Enemy.prototype.debug_render = function() {
  */
 Enemy.prototype.render = function() {
   ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
+  this.debug_render();
 };
 
 /**
@@ -428,6 +429,13 @@ MultiText.prototype.render = function() {
 };
 
 /**
+ * MultiText is alive if there's text to show
+ */
+MultiText.prototype.isAlive = function() {
+  return (this.idx > -1 && this.idx < this.texts.length);
+};
+
+/**
  * Update the current text or move to the next one
  */
 MultiText.prototype.update = function(dt) {
@@ -461,22 +469,44 @@ var Chronos = function(target_time, fn) {
   this.fn_ = fn;
 };
 
+/**
+ * Render time in upper-left corner
+ */
 Chronos.prototype.render = function() {
   var prevFont = ctx.font;
   var prevFillStyle = ctx.fillStyle;
 
   // red alert if time is running out (less than 30% left)
-  if ((this.target_time_ - this.time_) < (this.target_time_ * 0.3)) {
+  if (this.redZone()) {
     ctx.fillStyle = "red";
   }
   ctx.font = '20px fantasy';
-  ctx.fillText(this.time_.toFixed(2), 10, 27);
+  ctx.fillText(this.timeLeft().toFixed(2), 10, 27);
 
   // restore ctx state
   ctx.fillStyle = prevFillStyle;
   ctx.font = prevFont;
 };
 
+/**
+ * @return {number} time left until callback will be called
+ */
+Chronos.prototype.timeLeft = function() {
+  return this.target_time_ - this.time_;
+};
+
+/**
+ * @return {boolean} - if time is almost up (less than 30% left)
+ */
+Chronos.prototype.redZone = function() {
+  return ((this.target_time_ - this.time_) < (this.target_time_ * 0.3));
+};
+
+/**
+ * Update logic:
+ * - increase passed time
+ * - invoke callback if time has come for that
+ */
 Chronos.prototype.update = function(dt) {
   this.time_ += dt;
 
@@ -486,15 +516,79 @@ Chronos.prototype.update = function(dt) {
   }
 };
 
+/**
+ * @return {boolean} - is there still time left?
+ */
 Chronos.prototype.isAlive = function() {
   return this.time_ < this.target_time_;
 };
 
 /**
- * MultiText is alive if there's text to show
+ * Bonus - is a collectible item which is supposed to modify
+ * the state of the entity that 'caught' it.
+ * @constructor
+ * @implements {Enemy}
+ * @param {number} x - horizontal coordinate of the bonus
+ * @param {number} y - vertical coordinate of the bonus
+ * @param {string} filename - sprite to use
  */
-MultiText.prototype.isAlive = function() {
-  return (this.idx > -1 && this.idx < this.texts.length);
+var Bonus = function(x, y, filename) {
+  Enemy.call(this, x, y, filename || 'images/Star.png');
+
+  this.rect_bounds = {
+    left: 15,
+    top: 66,
+    right: this.w - 15,
+    bottom: this.h - 35
+  };
+
+  this.speed = 100;
+
+  // @private - bonus is alive until it is caught or flies off the screen
+  this.alive_ = true;
+};
+
+Bonus.prototype = Object.create(Enemy.prototype);
+Bonus.prototype.constructor = Bonus;
+
+Bonus.prototype.update = function(dt) {
+  this.y += this.speed * dt;
+
+  // make sure bonus dies after falling off the screen
+  if (this.y > this.screen_bounds.height) {
+    this.alive_ = false;
+  }
+
+  // check if player caught the bonus
+  // TODO: refactor Enemy.collide to be able to re-use it
+  var player_rects = player.bounding_boxes();
+  var own_rects    = this.bounding_boxes();
+
+done:
+  for (var i = 0, l = own_rects.length; i < l; i++) {
+    for (var j = 0, ol = player_rects.length; j < ol; j++) {
+      if (Enemy.rects_intersect(own_rects[i], player_rects[j])) {
+        this.applyBonus(player);
+        break done;
+      }
+    }
+  }
+};
+
+/**
+ * Apply bonus to the object that presumably caught it
+ * @param {Enemy} receiver - happy owner of the bonus
+ */
+Bonus.prototype.applyBonus = function(receiver) {
+  // speed up the receiver
+  receiver.speed *= 2;
+
+  // die
+  this.alive_ = false;
+};
+
+Bonus.prototype.isAlive = function() {
+  return this.alive_;
 };
 
 /**

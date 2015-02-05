@@ -252,7 +252,8 @@ var Engine = (function(global) {
                   function() {
                     request_reset();
                   }),
-      new MultiText(messages)
+      new MultiText(messages),
+      new Bonus(100, 100)
     ];
    }
 
@@ -265,7 +266,8 @@ var Engine = (function(global) {
     'images/water-block.png',
     'images/grass-block.png',
     'images/enemy-bug.png',
-    'images/char-boy.png'
+    'images/char-boy.png',
+    'images/Star.png'
   ]);
   Resources.onReady(init);
 
